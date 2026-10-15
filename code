@@ -87,3 +87,219 @@ Sub sendEmail()
     Next i
 End Sub
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sub sendReceipt()
+    Dim objOutlook As Object
+    Dim objMail As Object
+    Dim strTo As String
+    Dim strSubject, vendor As String
+    Dim table1 As Range
+    Dim i As Integer
+'    Application.ScreenUpdating = False
+    
+'Set email properties
+    vendor = Worksheets("Receipt").Range("C2")
+    If vendor = "Bolttech Digital Insurance / Apple Asia" Then
+        strTo = ""
+    Else
+        strTo = ""
+    End If
+    
+    strSubject = "PO Invoice (" & Worksheets("Receipt").Range("C2") & ") " & Date
+    'Debug.Print strSubject
+    i = Worksheets("Receipt").Range("A999").End(xlUp).Row
+    'Debug.Print i
+    Set table1 = Worksheets("Receipt").Range(Worksheets("Receipt").Cells(1, 1), Worksheets("Receipt").Cells(i, 8))
+    
+'Create Outlook object
+    Set objOutlook = CreateObject("Outlook.Application")
+    Set objMail = objOutlook.CreateItem(0)
+
+'Set email recipients, subject, and body
+    With objMail
+        .To = strTo
+        .Cc = ""
+        .Subject = strSubject
+        .Display
+        
+        Set WordDoc = .GetInspector.WordEditor
+
+        WordDoc.Range.Delete
+
+        WordDoc.Content.InsertBefore "Dear Finance Team," & vbCrLf & vbCrLf & _
+                                   "Attached are the invoices for payment. Thanks!" & vbCrLf & vbCrLf
+
+        table1.Copy
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+
+        WordDoc.Content.InsertAfter vbCrLf & "Best regards," & vbCrLf & _
+                                            "Bolttech" & vbCrLf & _
+                                            "Jimmy Yim"
+    End With
+
+'Clean up
+    Set objMail = Nothing
+    Set objOutlook = Nothing
+    
+End Sub
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sub checkAvailability()
+    Dim objOutlook As Object
+    Dim objMail As Object
+    Dim brand, vendor, contact, strTo, ccTo, strSubject, toName As String
+    Dim table1 As Range
+    Dim table2 As Range
+    Dim WordDoc As Object
+    Dim i As Integer
+    
+'Set email properties
+    brand = Worksheets("Check Availability").Cells(1, 6)
+    vendor = Worksheets("Check Availability").Cells(2, 6)
+    contact = Worksheets("Check Availability").Cells(3, 6)
+    'Debug.Print brand
+
+    strSubject = "Bolttech Inventory Order " & Format(Now(), "YYYY/MM/DD")
+    i = Worksheets("Check Availability").Range("A999").End(xlUp).Row
+    'Debug.Print i
+    Set table1 = Worksheets("Check Availability").Range(Worksheets("Check Availability").Cells(1, 1), Worksheets("Check Availability").Cells(i, 3))
+    table1.Copy
+
+'Create Outlook object
+    Set objOutlook = CreateObject("Outlook.Application")
+    Set objMail = objOutlook.CreateItem(0)
+
+'Set email recipients, subject, and body
+    With objMail
+        .To = strTo
+        .Cc = ccTo
+        .Subject = strSubject
+        .Display
+
+        Set WordDoc = .GetInspector.WordEditor
+        
+        WordDoc.Range.Delete
+        
+        WordDoc.Content.InsertBefore "Hi " & toName & ", " & vbCrLf & vbCrLf & _
+                                    "May you check if the below items are available for purchase? Thanks." & vbCrLf & vbCrLf
+
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+        
+        WordDoc.Content.InsertAfter vbCrLf & "Best regards," & vbCrLf & _
+                                    "Bolttech" & vbCrLf & _
+                                    "Jimmy Yim"
+    End With
+    
+'Clean up
+    Set objMail = Nothing
+    Set objOutlook = Nothing
+
+End Sub
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sub sendASN()
+    Dim objOutlook As Object
+    Dim objMail As Object
+    Dim strTo As String
+    Dim strSubject As String
+    Dim table1 As Range
+    Dim table2 As Range
+    Dim i As Integer
+    Application.ScreenUpdating = False
+    
+'Set email properties
+    strTo = ""
+    strSubject = Worksheets("ASN Email").Cells(3, 7)
+    Set table1 = Worksheets("ASN Email").Range("F3:G5")
+    i = WorksheetFunction.CountIf(Worksheets("ASN Email").Range("A:A"), "O")
+    'Debug.Print i
+    Set table2 = Worksheets("ASN Email").Range(Worksheets("ASN Email").Cells(8, 3), Worksheets("ASN Email").Cells(8 + i, 11))
+    
+'Create Outlook object
+    Set objOutlook = CreateObject("Outlook.Application")
+    Set objMail = objOutlook.CreateItem(0)
+
+'Set email recipients, subject, and body
+    With objMail
+        .To = strTo
+        .Cc = ccTo & ccToBolttech
+        .Subject = strSubject
+        .Display
+
+        Set WordDoc = .GetInspector.WordEditor
+
+        WordDoc.Range.Delete
+
+        WordDoc.Content.InsertBefore "Dear Frankie," & vbCrLf & vbCrLf & _
+                                   "Please find the ASN below:" & vbCrLf & vbCrLf
+
+        table1.Copy
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+
+        WordDoc.Content.InsertAfter vbCrLf
+
+        table2.Copy
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+
+        WordDoc.Content.InsertAfter vbCrLf & "Best regards," & vbCrLf & _
+                                            "Bolttech" & vbCrLf & _
+                                            "Jimmy Yim"
+        .Send
+    End With
+    
+End Sub
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sub draftPO()
+    Dim objOutlook As Object
+    Dim objMail As Object
+    Dim brand, vendor, PO, ASN, strTo, ccTo, ccToBolttech, strSubject, toName As String
+    Dim table1 As Range
+    Dim table2 As Range
+    Dim WordDoc As Object
+    Dim i As Range
+    Dim j As Integer
+    
+'Set email properties
+    vendor = Worksheets("Approval").Cells(5, 7)
+    ccToBolttech = ""
+    'Debug.Print brand
+
+    strSubject = "Bolttech Inventory Order " & Format(Now(), "YYYY/MM/DD") & " PO#" & Worksheets("Approval").Range("G3")
+    Set table1 = Worksheets("Approval").Range("F2:G8")
+    Set i = Worksheets("Approval").Range("E1:E70").Find("#N/A", LookIn:=xlValues)
+    'Debug.Print i.Row
+    Set table2 = Worksheets("Approval").Range(Worksheets("Approval").Cells(10, 4), Worksheets("Approval").Cells(i.Row - 1, 11))
+
+'Create Outlook object
+    Set objOutlook = CreateObject("Outlook.Application")
+    Set objMail = objOutlook.CreateItem(0)
+
+'Set email recipients, subject, and body
+    With objMail
+        .To = strTo
+        .Cc = ccTo & ccToBolttech
+        .Subject = strSubject
+        .Display
+
+        Set WordDoc = .GetInspector.WordEditor
+
+        WordDoc.Range.Delete
+
+        WordDoc.Content.InsertBefore "Dear " & toName & "," & vbCrLf & vbCrLf & _
+                                   "Please find the attached PO for processing. Also may you advise the delivery date? Thank you." & vbCrLf & vbCrLf
+
+        table1.Copy
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+
+        WordDoc.Content.InsertAfter vbCrLf
+
+        table2.Copy
+        WordDoc.Range(WordDoc.Content.End - 1).Paste
+
+        WordDoc.Content.InsertAfter vbCrLf & "Best regards," & vbCrLf & _
+                                            "Bolttech" & vbCrLf & _
+                                            "Jimmy Yim"
+    End With
+
+'Clean up
+    Set objMail = Nothing
+    Set objOutlook = Nothing
+    
+End Sub
