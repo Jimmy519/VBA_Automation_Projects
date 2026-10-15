@@ -1,0 +1,89 @@
+#Extract Email Contents
+Sub extractEmail()
+    Dim OutApp As New Outlook.Application
+    Dim OutNameSpace As Namespace, OutFolder As Folder, OutItem As Object, OutMail As MailItem
+    Dim r As Integer
+    
+    Set OutNameSpace = OutApp.GetNamespace("MAPI")
+    Set OutFolder = OutNameSpace.GetDefaultFolder(olFolderInbox).Folders("Macro")
+    
+    r = 1
+    For Each OutItem In OutFolder.Items
+        Set OutMail = OutItem
+        r = r + 1
+        With Worksheets("Sheet1")
+            'Extract Email Sent Datetime
+            Range("A" & r).Value = OutMail.SentOn
+            'Extract Email EW Memo & Add /
+            Range("B" & r).Value = Left(OutMail.Subject, 11)
+            Range("B" & r).Value = Left(Range("B" & r), 4) & "/" & Mid(Range("B" & r), 5, 7)
+            'Extract EW Memo & Add /
+            Range("C" & r).Value = Mid(OutMail.Body, InStr(1, OutMail.Body, "EW Memo") + 9, 11)
+            Range("C" & r).Value = Left(Range("C" & r), 4) & "/" & Mid(Range("C" & r), 5, 7)
+            'Extract Product Memo & Add /
+            Range("D" & r).Value = Mid(OutMail.Body, InStr(1, OutMail.Body, "Product Memo") + 15, 11)
+            Range("D" & r).Value = Left(Range("D" & r), 4) & "/" & Mid(Range("D" & r), 5, 7)
+            'Extract Symptoms
+            Range("E" & r).Value = Mid(OutMail.Body, InStr(1, OutMail.Body, "Symptoms") + 11, InStr(1, OutMail.Body, "Attached") - (InStr(1, OutMail.Body, "Symptoms") + 11))
+            Range("E" & r) = Trim(Replace(Range("E" & r), vbCrLf, ""))
+        End With
+    Next OutItem
+    
+End Sub
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Batch Send Emails With Variables
+Sub sendEmail()
+    Dim OutApp As Object, OutMail As Object
+    Dim OutDoc As Object, wordApp As Object
+    Dim imgPath As String, shp As Object
+    Dim i As Integer
+    Dim targetWidth As Single
+    
+    Application.ScreenUpdating = False
+    
+    imgPath = "C:\Users\JimmyYim\OneDrive - bolttech\Desktop\switch logo2.png"
+    
+    For i = 2 To 17
+        'Create Email
+        Set OutApp = CreateObject("Outlook.Application")
+        Set OutMail = OutApp.CreateItem(0)
+        
+        'Attach Content
+        With OutMail
+            .SentOnBehalfOfName = "noreply@bolttech.hk"
+            .To = Worksheets("Sheet1").Cells(i, 9)
+            .Bcc = "dpsupport.hk@bolttech.io"
+            .Subject = Worksheets("Sheet2").Range("B1")
+            .HTMLBody = "<html><br><br>" & _
+                        "<p>" & Worksheets("Sheet2").Range("A1") & Worksheets("Sheet1").Cells(i, 53) & " " & Worksheets("Sheet1").Cells(i, 54) & "</p>" & _
+                        Worksheets("Sheet2").Range("A2") & _
+                        Worksheets("Sheet2").Range("A3") & Worksheets("Sheet1").Cells(i, 6) & "</p>" & _
+                        "<p>" & Worksheets("Sheet2").Range("A4") & Worksheets("Sheet1").Cells(i, 56) & "</p>" & _
+                        "<p>" & Worksheets("Sheet2").Range("A5") & Worksheets("Sheet1").Cells(i, 57) & "</p>" & _
+                        Worksheets("Sheet2").Range("A6") & _
+                        "<br><br>" & _
+                        "</body></html>"
+            
+            ' Must display or inspector must be open to access GetInspector
+            .Display
+    
+            ' Access Word Document object representing the email body
+            Set OutDoc = .GetInspector.WordEditor
+            
+            ' Add picture into Word Document
+            Set shp = OutDoc.InlineShapes.AddPicture(Filename:=imgPath, LinkToFile:=False, SaveWithDocument:=True)
+            
+            shp.Height = 160
+            shp.Width = 160
+            shp.Range.ParagraphFormat.Alignment = 2
+            
+'            .Send
+            
+        End With
+        
+        'Clean up
+        Set objMail = Nothing
+        Set objOutlook = Nothing
+    Next i
+End Sub
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
